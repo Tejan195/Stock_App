@@ -8,78 +8,99 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 function App() {
   const [watchlistStocks, setWatchlistStocks] = useState([
-    { symbol: 'TSLA', name: 'Tesla, Inc', price: 417.41, change: '+12.2%', logo: 'T' },
-    { symbol: 'INTC', name: 'Intel Corporation', price: 118.15, change: '+8.6%', logo: 'IN' },
-    { symbol: 'AAPL', name: 'Apple Inc', price: 102.32, change: '-1.2%', logo: 'A' },
-    { symbol: 'GTOFF', name: 'GT Capital', price: 192.40, change: '-7.1%', logo: 'G' }
+    { symbol: 0, name: 0, price: 0, change: '0', logo: 'T' },
+    { symbol: 0, name: 0, price: 0, change: '0', logo: 'IN' },
+    { symbol: 0, name: 0, price: 0, change: '0', logo: 'A' },
+    { symbol: 0, name: 0, price: 0, change: '0', logo: 'G' }
   ]);
 
   const [selectedStock, setSelectedStock] = useState({
-    symbol: 'TSLA',
-    name: 'Tesla, Inc',
-    ticker: 'TSLA',
-    currentPrice: 417.41,
-    priceChange: 14.25,
-    percentChange: 3.53,
-    preMarketPrice: 412.02,
-    preMarketChange: 5.38,
-    preMarketPercentChange: 1.29,
-    closeDate: 'December 27 at 4:00:00 PM EST',
-    preMarketTime: '4:34:17 AM EST',
+    symbol: 0,
+    name: 0,
+    ticker: 0,
+    currentPrice: 0,
+    priceChange:0,
+    percentChange: 0,
+    preMarketPrice: 0,
+    preMarketChange: 0,
+    preMarketPercentChange: 0,
+    closeDate: 0,
+    preMarketTime: 0,
   });
 
   const [chartData, setChartData] = useState({
     labels: Array.from({ length: 20 }, (_, i) => i + 12),
     datasets: [
       {
-        label: 'Portfolio Value',
-        data: Array.from({ length: 20 }, () => Math.random() * 100 + 300),
+        label: 'Close Price',
+        data:[],
         borderColor: 'rgba(75, 192, 192, 1)',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
         tension: 0.4
       },
       {
-        label: 'Moving Average',
-        data: Array.from({ length: 20 }, () => Math.random() * 50 + 320),
+        label: 'Open Price',
+        data: [],
         borderColor: 'rgba(54, 162, 235, 1)',
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        tension: 0.4
+      },
+      {
+        label: 'High Price',
+        data: [],
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        tension: 0.4
+      },
+      {
+        label: 'Low Price',
+        data:[],
+        borderColor: 'rgba(255, 206, 86, 1)',
+        backgroundColor: 'rgba(255, 206, 86, 0.2)',
+        tension: 0.4
+      },
+      {
+        label: 'Volume',
+        data: [],
+        borderColor: 'rgba(153, 102, 255, 1)',
+        backgroundColor: 'rgba(153, 102, 255, 0.2)',
         tension: 0.4
       }
     ]
   });
 
   const [stockDetails, setStockDetails] = useState({
-    previousClose: 431.66,
-    open: 419.20,
-    bid: '416.45 x 100',
-    ask: '418.08 x 100',
-    daysRange: '415.75 - 427.00',
-    weekRange: '138.80 - 488.54',
-    volume: '62,625,165',
-    avgVolume: '92,519,436',
-    marketCap: '1.34T',
-    beta: '2.30',
-    peRatio: '114.99',
-    eps: '3.63',
-    earningsDate: 'Jan 24 - Feb 3, 2025',
-    forwardDividend: '--',
-    exDividendDate: '--',
-    targetEst: '283.88'
+    previousClose: 0,
+    open: 0,
+    bid: '0',
+    ask: '0',
+    daysRange: '0',
+    weekRange: '0',
+    volume: '0',
+    avgVolume: '0',
+    marketCap: '0',
+    beta: '0',
+    peRatio: '0',
+    eps: '0',
+    earningsDate: '0',
+    forwardDividend: '0',
+    exDividendDate: '0',
+    targetEst: '0'
   });
 
   const [incomeData, setIncomeData] = useState({
     months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-    revenue: [35, 42, 30, 35, 25, 40, 45, 38],
-    netIncome: [20, 28, 18, 22, 15, 25, 30, 22]
+    revenue: [0, 0, 0, 0, 0, 0, 0, 0],
+    netIncome: [0, 0, 0, 0, 0, 0, 0, 0]
   });
 
   const [capitalization, setCapitalization] = useState({
-    totalEnterpriseValue: 195.58,
-    totalCapital: 73.18,
-    netLiability: 60.20,
-    marketCap: 145.30,
-    commonEquity: 42.63,
-    totalLiability: 30.55
+    totalEnterpriseValue: 0,
+    totalCapital: 0,
+    netLiability: 0,
+    marketCap: 0,
+    commonEquity: 0,
+    totalLiability: 0
   });
 
   const [indexMetrics, setIndexMetrics] = useState({
@@ -96,6 +117,8 @@ function App() {
   const [indices, setIndices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [timeRange, setTimeRange] = useState('1M');
+  const [rawData, setRawData] = useEffect([]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -110,6 +133,7 @@ function App() {
             const filteredData = data.filter(row => row.index_name);
             const uniqueIndices = [...new Set(filteredData.map(row => row.index_name))];
             setIndices(uniqueIndices);
+            setRawData(filteredData);
             if (uniqueIndices.length > 0) {
               setSelectedIndex(uniqueIndices[0]);
             }
@@ -129,118 +153,188 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!selectedIndex) return;
-    const fetchStockData = async () => {
-      setLoading(true);
-      try {
-        Papa.parse('/dump.csv', {
-          download: true,
-          header: true,
-          dynamicTyping: true,
-          complete: (results) => {
-            const filteredData = results.data.filter(row => row.index_name === selectedIndex && row.closing_index_value !== null);
-            filteredData.sort((a, b) => new Date(a.index_date) - new Date(b.index_date));
-            const dates = filteredData.map(row => row.index_date);
-            const closePrices = filteredData.map(row => row.closing_index_value);
-            const openPrices = filteredData.map(row => row.open_index_value);
-            const highPrices = filteredData.map(row => row.high_index_value);
-            const lowPrices = filteredData.map(row => row.low_index_value);
-            const volumes = filteredData.map(row => row.volume);
-            const labels = filteredData.map(row => {
-              const date = new Date(row.index_date);
-              return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
-            });
-            const values = filteredData.map(row => row.closing_index_value);
-            if (values.length > 0) {
-              const latest = values[values.length - 1];
-              const previous = values.length > 1 ? values[values.length - 2] : latest;
-              const change = latest - previous;
-              const percentChange = (change / previous) * 100;
-              setSelectedStock({
-                symbol: selectedIndex,
-                name: selectedIndex,
-                ticker: selectedIndex,
-                currentPrice: latest,
-                priceChange: change,
-                percentChange: percentChange,
-                preMarketPrice: latest,
-                preMarketChange: change,
-                preMarketPercentChange: percentChange,
-                closeDate: labels[labels.length - 1],
-                preMarketTime: labels[labels.length - 1]
-              });
-              setIndexMetrics({
-                latestValue: latest.toFixed(2),
-                change: change.toFixed(2),
-                percentChange: percentChange.toFixed(2),
-                previousValue: previous.toFixed(2),
-                highestValue: Math.max(...values).toFixed(2),
-                lowestValue: Math.min(...values).toFixed(2),
-                avgValue: (values.reduce((sum, val) => sum + val, 0) / values.length).toFixed(2)
-              });
-            }
-            setChartData({
-              labels: dates,
-              datasets: [
-                {
-                  label: 'Close Price',
-                  data: closePrices,
-                  borderColor: 'rgba(75, 192, 192, 1)',
-                  backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                  tension: 0.4
-                },
-                {
-                  label: 'Open Price',
-                  data: openPrices,
-                  borderColor: 'rgba(54, 162, 235, 1)',
-                  backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                  tension: 0.4
-                },
-                {
-                  label: 'High Price',
-                  data: highPrices,
-                  borderColor: 'rgba(255, 99, 132, 1)',
-                  backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                  tension: 0.4
-                },
-                {
-                  label: 'Low Price',
-                  data: lowPrices,
-                  borderColor: 'rgba(255, 206, 86, 1)',
-                  backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                  tension: 0.4
-                },
-                {
-                  label: 'Volume',
-                  data: volumes,
-                  borderColor: 'rgba(153, 102, 255, 1)',
-                  backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                  tension: 0.4
-                }
-              ]
-            });
-            setLoading(false);
-          },
-          error: (err) => {
-            setError(err);
-            setLoading(false);
-          }
-        });
-      } catch (err) {
-        setError(err);
-        setLoading(false);
+    if (!selectedIndex || !rawData.length) return;
+    const filteredDataByTimeRange = (data, range)=>{
+      const now = new Date();
+      const startDate = new Date();
+      switch(range){
+        case '1D':
+          startDate.setDate(now.getDate()-1);
+          break;
+        case '1W':
+          startDate.setDate(now.getDate()-7);
+          break;
+        case '1M':
+          startDate.setMonth(now.getMonth()-3);
+          break;
+        case '1Y':
+          startDate.setFullYear(now.getFullYear()-1);
+          break;
+        case '5Y':
+          startDate.setFullYear(now.getFullYear()-5);
+          default:
+          startDate.setMonth(now.getMonth()-1);
       }
+      return data.filter(row=>{
+      const rowDate = new Date(row.index_date);
+      return rowDate >= startDate && rowDate <= now;
+    });
     };
-    fetchStockData();
-  }, [selectedIndex]);
+    const aggerateData = (Data, range)=>{
+      if(range=='1D'||range=='1W' || range =='1M' || range == '1Y' || range =='5Y'){
+        return Data;
+    }
+    const aggeratedData =[];
+    const interval = range === '1Y' || range === '3M' ? 'week' : 'month';
+    const groupedData = Data.reduce((acc, row)=>{
+      const date =new Date(row.index_date);
+      let key;
+     if(interval === 'week'){
+      const weekStart = new Date(date);
+      weekStart.setDate(date.getDate()-date.getDay());
+      key = `${weekStart}.getFullYear()-${weekStart.getMonth()+1}-${weekStart.getDate()}`;
+     }else{
+      key = `${date.getFullYear()}-${date.getMonth()+1}`;
+     }
+     if(!acc[key]){
+        acc[key] ={rows : [], date};
+     }
+     acc[key].rows.push(row);
+     return acc;
+    },[]);
+    Object.values(groupedData).forEach(group=>{
+      const rows = group.rows;
+      const avgRow = {
+        index_date: group.date,
+        closing_index_value:rows.reduce((sum, r)=>sum+(r.closing_index_value || 0),0)/ rows.length,
+        open_index_value:rows.reduce((sum,r)=>sum+(r.open_index_value ||0),0)/rows.length,
+        high_index_value:rows.reduce((sum,r)=>sum+(r.high_index_value||0),0)/rows.length,
+        low_index_value:rows.reduce((sum,r)=>sum+r.low_index_value||0,0)/rows.length,
+      };
+      aggeratedData.push(avgRow);
+  });
+  return aggeratedData.sort((a,b)=>new Date(a.index_date)-new Date(b.index_date));
+};
+const filteredData = filteredDataByTimeRange(rawData.filter(row=>row.index_name===selectedIndex && row.closing_index_value !==null),timeRange);
+const processedData = aggerateData(filteredData, timeRange);
+const dates = processedData.map(row=>row.index_date);
+const closingPrices = processedData.map(row=>row.closing_index_value);
+const openPrices = processedData.map(row=>row.open_index_value);
+const highPrices = processedData.map(row=>row.high_index_value);
+const lowPrices = processedData.map(row=>row.low_index_value);
+const volumes = processedData.map(row=>row.volume);
+processedData.sort((a,b)=>new Date(a.index_date)-new Date(b.index_date));
+const labels = processedData.map(row=>{
+  const date = new Date(row.index_date);
+  return `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`;
+  }) ;
+  const values = processedData.map(row=>row.closing_index_value);
+  if(values.length>0){
+    const latestValue = values[values.length-1];
+    const Previous = values.length > 1? values[values.length-2]:latest;
+    const change = latest - Previous;
+    const percentChange = Previous!==0?(change/Previous)*100:0; 
+    selectedStock(prevStock=>({
+      ...prevStock,
+      symbol:selectedIndex,
+      name:selectedIndex,
+      ticker:selectedIndex,
+      currentPrice:latestValue,
+      priceChange:change,
+      percentChange:percentChange,
+      preMarketPrice:latestValue,
+      preMarketChange:change,
+      preMarketPercentChange:percentChange,
+      closeDate:labels[labels.length-1],
+      preMarketTime:labels[labels.length-1],
+
+    }));
+    setIndexMetrics({
+      latestValue:latestValue.toFixed(2),
+      change:change.toFixed(2),
+      percentChange:percentChange.toFixed(2),
+      previousValue:Previous.toFixed(2),
+      highestValue:Math.max(...values).toFixed(2),
+      lowestValue:Math.min(...values).toFixed(2),
+      avgValue:(values.reduce((sum,val)=>sum+val,0)/values.length).toFixed(2)
+    });
+    setWatchlistStocks(prevStocks=>prevStocks.mao(stock=>
+      stock.symbol === selectedIndex?{
+        ...stock,
+        price:latestValue,
+        change:`${change=>0?'+':''}${change.toFixed(2)}(${percentChange.toFixed(2)}%)`,
+      }
+      :stock
+    ));
+  }
+  setChartData({
+    labels:labels,
+    datasets:[
+      {
+        label:'Close Price',
+        data:closingPrices,
+        borderColor:'rgba(75,192,192,1)',   
+        backgroundColor:'rgba(75,192,192,0.2)',
+        tension:0.4,
+        yAxisID:'y',
+        pointRadius:0,
+      },
+      {
+        labels: 'Open Price',
+        data: openPrices,
+        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        tension:0.4,
+        yAxisID:'y',
+        pointRadius:0,
+      },
+      {
+        labels:'High Price',
+        data:highPrices,
+        borderColor:'rgba(255,99,132,1)',
+        backgroundColor:'rgba(255,99,132,0.2)',
+        tension:0.4,                
+        yAxisID:'y',
+        pointRadius:0,
+
+      },
+      {
+        labels:'Low Price',
+        data:lowPrices,
+        borderColor:'rgba(255,206,86,1)',
+        backgroundColor:'rgba(255,206,86,0.2)',
+        tension:0.4,
+        yAxisID:'y',
+        pointRadius:0,
+      },
+      {
+        labels:'Volume',
+        data:volumes,
+        borderColor:'rgba(153,102,255,1)',
+        backgroundColor:'rgba(153,102,255,0.2)',
+        tension:0.4,
+        yAxisID:'y1',
+        pointRadius:0,
+      },
+    ]
+  })
+  }, [selectedIndex,timeRange,rawData]);
 
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
       y: {
+        type:'linear',
+        position:'left',
         ticks: { color: '#aaa' },
         grid: { color: 'rgba(255, 255, 255, 0.1)' }
+      },
+      y1:{
+        type:'linear',
+        position:'right',
+        ticks:{color:'#aaa'},
+        grid:{color:'rgba(255,255,255,0.1)'}
       },
       x: {
         ticks: { color: '#aaa' },
@@ -251,10 +345,12 @@ function App() {
       legend: {
         position: 'bottom',
         labels: { color: '#aaa' }
-      }
-    }
+      },
+    },
   };
-
+ const handleTimeRangeChange = (range)=>{
+  setTimeRange(range);
+ };
   const incomeChartData = {
     labels: incomeData.months,
     datasets: [
@@ -383,8 +479,6 @@ function App() {
                 <span className="badge bg-dark">⬆️</span>
                 <span>×</span>
               </div>
-              <p className="fw-bold mt-2 mb-1">Upgrade to pro ↗</p>
-              <p className="small text-muted">Upgrade and unlock all features now</p>
             </div>
           </div>
         </div>
@@ -417,15 +511,15 @@ function App() {
               <div className="row">
                 <div className="col-md-6">
                   <div className="d-flex align-items-baseline">
-                    <h2 className="me-2">{selectedStock.currentPrice}</h2>
-                    <span style={{ color: 'lightgreen' }}>+{selectedStock.priceChange} (+{selectedStock.percentChange}%)</span>
+                    <h2 className="me-2">{selectedStock.currentPrice.toFixed(2)}</h2>
+                    <span style={{ color: 'lightgreen' }}>+{selectedStock.priceChange.toFixed(3)} (+{selectedStock.percentChange.toFixed(2)}%)</span>
                   </div>
                   <div className="text-secondary">At close: {selectedStock.closeDate}</div>
                 </div>
                 <div className="col-md-6">
                   <div className="d-flex align-items-baseline">
-                    <h4 className="me-2">{selectedStock.preMarketPrice}</h4>
-                    <span style={{ color: 'lightgreen' }}>+{selectedStock.preMarketChange} (+{selectedStock.preMarketPercentChange}%)</span>
+                    <h4 className="me-2">{selectedStock.preMarketPrice.toFixed(2)}</h4>
+                    <span style={{ color: 'lightgreen' }}>+{selectedStock.preMarketChange.toFixed(2)} (+{selectedStock.preMarketPercentChange.toFixed(2)}%)</span>
                   </div>
                   <div className="text-secondary">Pre-Market: {selectedStock.preMarketTime}</div>
                 </div>
@@ -446,9 +540,12 @@ function App() {
             </div>
             <div className="mb-4">
               <div className="d-flex">
-                <button className="btn btn-dark me-2">1D</button>
-                <button className="btn btn-dark me-2">1W</button>
-                <button className="btn btn-dark me-2 active">1M</button>
+                <button className={`btn btn-dark me-2 ${timeRange==='1D'? 'active':''}`}
+              onClick={()=>handleTimeRangeChange('1D')}>1D</button>
+                <button className={`btn btn-dark me-2 ${timeRange==='1W'?'active':''}`}
+                onClickClick={()=>handleTimeRangeChange('1W')}>1W</button>
+                <button className={`btn btn-dark me-2 active ${timeRange==='1M'?'active':''}`}
+              onClick={()=>handleTimeRangeChange('1M')}>1M</button>
                 <button className="btn btn-dark me-2">3M</button>
                 <button className="btn btn-dark me-2">1Y</button>
                 <button className="btn btn-dark me-2">5Y</button>
