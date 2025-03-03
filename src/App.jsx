@@ -8,90 +8,92 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 function App() {
   const [watchlistStocks, setWatchlistStocks] = useState([
-    { symbol: 0, name: 0, price: 0, change: '0', logo: 'T' },
-    { symbol: 0, name: 0, price: 0, change: '0', logo: 'IN' },
-    { symbol: 0, name: 0, price: 0, change: '0', logo: 'A' },
-    { symbol: 0, name: 0, price: 0, change: '0', logo: 'G' }
+    { symbol: 'NIFTY 50', name: 'Nifty 50', price: 0, change: '0', logo: 'T' },
+    { symbol: 'INTC', name: 'Intel Corporation', price: 0, change: '0', logo: 'IN' },
+    { symbol: 'AAPL', name: 'Apple Inc', price: 0, change: '0', logo: 'A' },
+    { symbol: 'GTOFF', name: 'GT Capital', price: 0, change: '0', logo: 'G' },
   ]);
 
   const [selectedStock, setSelectedStock] = useState({
-    symbol: 0,
-    name: 0,
-    ticker: 0,
+    symbol: '',
+    name: '',
+    ticker: '',
     currentPrice: 0,
-    priceChange:0,
+    priceChange: 0,
     percentChange: 0,
     preMarketPrice: 0,
     preMarketChange: 0,
     preMarketPercentChange: 0,
-    closeDate: 0,
-    preMarketTime: 0,
   });
 
   const [chartData, setChartData] = useState({
-    labels: Array.from({ length: 20 }, (_, i) => i + 12),
+    labels: [],
     datasets: [
       {
         label: 'Close Price',
-        data:[],
+        data: [],
         borderColor: 'rgba(75, 192, 192, 1)',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        tension: 0.4
+        tension: 0.4,
+        yAxisID: 'y',
+        pointRadius: 0,
       },
       {
         label: 'Open Price',
         data: [],
         borderColor: 'rgba(54, 162, 235, 1)',
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
-        tension: 0.4
+        tension: 0.4,
+        yAxisID: 'y',
+        pointRadius: 0,
       },
       {
         label: 'High Price',
         data: [],
         borderColor: 'rgba(255, 99, 132, 1)',
         backgroundColor: 'rgba(255, 99, 132, 0.2)',
-        tension: 0.4
+        tension: 0.4,
+        yAxisID: 'y',
+        pointRadius: 0,
       },
       {
         label: 'Low Price',
-        data:[],
+        data: [],
         borderColor: 'rgba(255, 206, 86, 1)',
         backgroundColor: 'rgba(255, 206, 86, 0.2)',
-        tension: 0.4
+        tension: 0.4,
+        yAxisID: 'y',
+        pointRadius: 0,
       },
       {
         label: 'Volume',
         data: [],
         borderColor: 'rgba(153, 102, 255, 1)',
         backgroundColor: 'rgba(153, 102, 255, 0.2)',
-        tension: 0.4
-      }
-    ]
+        tension: 0.4,
+        yAxisID: 'y1',
+        pointRadius: 0,
+      },
+    ],
   });
 
   const [stockDetails, setStockDetails] = useState({
     previousClose: 0,
     open: 0,
-    bid: '0',
-    ask: '0',
-    daysRange: '0',
-    weekRange: '0',
-    volume: '0',
-    avgVolume: '0',
-    marketCap: '0',
-    beta: '0',
-    peRatio: '0',
-    eps: '0',
-    earningsDate: '0',
-    forwardDividend: '0',
-    exDividendDate: '0',
-    targetEst: '0'
+    pointsChange: 0,
+    changePercent: 0,
+    volume: 0,
+    turnover: 0,
+    pbRatio: 0,
+    peRatio: 0,
+    divyield: 0,
+    daysRange: 'N/A',
   });
 
   const [incomeData, setIncomeData] = useState({
     months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
     revenue: [0, 0, 0, 0, 0, 0, 0, 0],
-    netIncome: [0, 0, 0, 0, 0, 0, 0, 0]
+    netIncome: [0, 0, 0, 0, 0, 0, 0, 0],
   });
 
   const [capitalization, setCapitalization] = useState({
@@ -100,7 +102,7 @@ function App() {
     netLiability: 0,
     marketCap: 0,
     commonEquity: 0,
-    totalLiability: 0
+    totalLiability: 0,
   });
 
   const [indexMetrics, setIndexMetrics] = useState({
@@ -110,7 +112,7 @@ function App() {
     previousValue: 0,
     highestValue: 0,
     lowestValue: 0,
-    avgValue: 0
+    avgValue: 0,
   });
 
   const [selectedIndex, setSelectedIndex] = useState('');
@@ -118,7 +120,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [timeRange, setTimeRange] = useState('1M');
-  const [rawData, setRawData] = useEffect([]);
+  const [rawData, setRawData] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -142,7 +147,7 @@ function App() {
           error: (err) => {
             setError(err);
             setLoading(false);
-          }
+          },
         });
       } catch (err) {
         setError(err);
@@ -154,203 +159,281 @@ function App() {
 
   useEffect(() => {
     if (!selectedIndex || !rawData.length) return;
-    const filteredDataByTimeRange = (data, range)=>{
-      const now = new Date();
-      const startDate = new Date();
-      switch(range){
+  
+    const filteredDataByTimeRange = (data, range) => {
+      const now = new Date('2024-03-23');
+      const startDate = new Date(now);
+      switch (range) {
         case '1D':
-          startDate.setDate(now.getDate()-1);
+          startDate.setDate(now.getDate() - 1);
           break;
         case '1W':
-          startDate.setDate(now.getDate()-7);
+          startDate.setDate(now.getDate() - 7);
           break;
         case '1M':
-          startDate.setMonth(now.getMonth()-3);
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+        case '3M':
+          startDate.setMonth(now.getMonth() - 3);
           break;
         case '1Y':
-          startDate.setFullYear(now.getFullYear()-1);
+          startDate.setFullYear(now.getFullYear() - 1);
           break;
         case '5Y':
-          startDate.setFullYear(now.getFullYear()-5);
-          default:
-          startDate.setMonth(now.getMonth()-1);
+          startDate.setFullYear(now.getFullYear() - 5);
+          break;
+        case 'ALL':
+          startDate = new Date('1900-01-01');
+          break;
+        default:
+          startDate.setMonth(now.getMonth() - 1);
+          break;
       }
-      return data.filter(row=>{
-      const rowDate = new Date(row.index_date);
-      return rowDate >= startDate && rowDate <= now;
-    });
+  
+      let filtered = data.filter(row => {
+        const rowDate = new Date(row.index_date);
+        return rowDate >= startDate && rowDate <= now;
+      });
+  
+      if (filtered.length === 0) {
+        console.warn(`No data found for ${range}. Falling back to all available data.`);
+        filtered = data;
+      }
+  
+      return filtered;
     };
-    const aggerateData = (Data, range)=>{
-      if(range=='1D'||range=='1W' || range =='1M' || range == '1Y' || range =='5Y'){
-        return Data;
-    }
-    const aggeratedData =[];
-    const interval = range === '1Y' || range === '3M' ? 'week' : 'month';
-    const groupedData = Data.reduce((acc, row)=>{
-      const date =new Date(row.index_date);
-      let key;
-     if(interval === 'week'){
-      const weekStart = new Date(date);
-      weekStart.setDate(date.getDate()-date.getDay());
-      key = `${weekStart}.getFullYear()-${weekStart.getMonth()+1}-${weekStart.getDate()}`;
-     }else{
-      key = `${date.getFullYear()}-${date.getMonth()+1}`;
-     }
-     if(!acc[key]){
-        acc[key] ={rows : [], date};
-     }
-     acc[key].rows.push(row);
-     return acc;
-    },[]);
-    Object.values(groupedData).forEach(group=>{
-      const rows = group.rows;
-      const avgRow = {
-        index_date: group.date,
-        closing_index_value:rows.reduce((sum, r)=>sum+(r.closing_index_value || 0),0)/ rows.length,
-        open_index_value:rows.reduce((sum,r)=>sum+(r.open_index_value ||0),0)/rows.length,
-        high_index_value:rows.reduce((sum,r)=>sum+(r.high_index_value||0),0)/rows.length,
-        low_index_value:rows.reduce((sum,r)=>sum+r.low_index_value||0,0)/rows.length,
-      };
-      aggeratedData.push(avgRow);
-  });
-  return aggeratedData.sort((a,b)=>new Date(a.index_date)-new Date(b.index_date));
-};
-const filteredData = filteredDataByTimeRange(rawData.filter(row=>row.index_name===selectedIndex && row.closing_index_value !==null),timeRange);
-const processedData = aggerateData(filteredData, timeRange);
-const dates = processedData.map(row=>row.index_date);
-const closingPrices = processedData.map(row=>row.closing_index_value);
-const openPrices = processedData.map(row=>row.open_index_value);
-const highPrices = processedData.map(row=>row.high_index_value);
-const lowPrices = processedData.map(row=>row.low_index_value);
-const volumes = processedData.map(row=>row.volume);
-processedData.sort((a,b)=>new Date(a.index_date)-new Date(b.index_date));
-const labels = processedData.map(row=>{
-  const date = new Date(row.index_date);
-  return `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`;
-  }) ;
-  const values = processedData.map(row=>row.closing_index_value);
-  if(values.length>0){
-    const latestValue = values[values.length-1];
-    const Previous = values.length > 1? values[values.length-2]:latest;
-    const change = latest - Previous;
-    const percentChange = Previous!==0?(change/Previous)*100:0; 
-    selectedStock(prevStock=>({
-      ...prevStock,
-      symbol:selectedIndex,
-      name:selectedIndex,
-      ticker:selectedIndex,
-      currentPrice:latestValue,
-      priceChange:change,
-      percentChange:percentChange,
-      preMarketPrice:latestValue,
-      preMarketChange:change,
-      preMarketPercentChange:percentChange,
-      closeDate:labels[labels.length-1],
-      preMarketTime:labels[labels.length-1],
-
-    }));
-    setIndexMetrics({
-      latestValue:latestValue.toFixed(2),
-      change:change.toFixed(2),
-      percentChange:percentChange.toFixed(2),
-      previousValue:Previous.toFixed(2),
-      highestValue:Math.max(...values).toFixed(2),
-      lowestValue:Math.min(...values).toFixed(2),
-      avgValue:(values.reduce((sum,val)=>sum+val,0)/values.length).toFixed(2)
-    });
-    setWatchlistStocks(prevStocks=>prevStocks.mao(stock=>
-      stock.symbol === selectedIndex?{
-        ...stock,
-        price:latestValue,
-        change:`${change=>0?'+':''}${change.toFixed(2)}(${percentChange.toFixed(2)}%)`,
+  
+    const aggregateData = (data, range) => {
+      if (range === '1D' || range === '1W' || range === '1M' || range === '1Y') {
+        return data;
       }
-      :stock
-    ));
-  }
-  setChartData({
-    labels:labels,
-    datasets:[
-      {
-        label:'Close Price',
-        data:closingPrices,
-        borderColor:'rgba(75,192,192,1)',   
-        backgroundColor:'rgba(75,192,192,0.2)',
-        tension:0.4,
-        yAxisID:'y',
-        pointRadius:0,
-      },
-      {
-        labels: 'Open Price',
-        data: openPrices,
-        borderColor: 'rgba(54, 162, 235, 1)',
-        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-        tension:0.4,
-        yAxisID:'y',
-        pointRadius:0,
-      },
-      {
-        labels:'High Price',
-        data:highPrices,
-        borderColor:'rgba(255,99,132,1)',
-        backgroundColor:'rgba(255,99,132,0.2)',
-        tension:0.4,                
-        yAxisID:'y',
-        pointRadius:0,
-
-      },
-      {
-        labels:'Low Price',
-        data:lowPrices,
-        borderColor:'rgba(255,206,86,1)',
-        backgroundColor:'rgba(255,206,86,0.2)',
-        tension:0.4,
-        yAxisID:'y',
-        pointRadius:0,
-      },
-      {
-        labels:'Volume',
-        data:volumes,
-        borderColor:'rgba(153,102,255,1)',
-        backgroundColor:'rgba(153,102,255,0.2)',
-        tension:0.4,
-        yAxisID:'y1',
-        pointRadius:0,
-      },
-    ]
-  })
-  }, [selectedIndex,timeRange,rawData]);
+      const aggregated = [];
+      const interval = range === '3M' ? 'week' : 'month';
+  
+      const groupedData = data.reduce((acc, row) => {
+        const date = new Date(row.index_date);
+        let key;
+        if (interval === 'week') {
+          const weekStart = new Date(date);
+          weekStart.setDate(date.getDate() - date.getDay());
+          key = `${weekStart.getFullYear()}-${weekStart.getMonth() + 1}-${weekStart.getDate()}`;
+        } else {
+          key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+        }
+        if (!acc[key]) {
+          acc[key] = { rows: [], date };
+        }
+        acc[key].rows.push(row);
+        return acc;
+      }, {});
+  
+      Object.values(groupedData).forEach(group => {
+        const rows = group.rows;
+        const avgRow = {
+          index_date: group.date,
+          closing_index_value: rows.reduce((sum, r) => sum + (r.closing_index_value || 0), 0) / rows.length,
+          open_index_value: rows.reduce((sum, r) => sum + (r.open_index_value || 0), 0) / rows.length,
+          high_index_value: rows.reduce((sum, r) => sum + (r.high_index_value || 0), 0) / rows.length,
+          low_index_value: rows.reduce((sum, r) => sum + (r.low_index_value || 0), 0) / rows.length,
+          volume: rows.reduce((sum, r) => sum + (r.volume || 0), 0) / rows.length,
+          pe_ratio: rows.reduce((sum, r) => sum + (r.pe_ratio || 0), 0) / rows.length,
+          pb_ratio: rows.reduce((sum, r) => sum + (r.pb_ratio || 0), 0) / rows.length,
+          turnover_rs_cr: rows.reduce((sum, r) => sum + (r.turnover_rs_cr || 0), 0) / rows.length,
+          points_change: rows.reduce((sum, r) => sum + (r.points_change || 0), 0) / rows.length,
+          change_percent: rows.reduce((sum, r) => sum + (r.change_percent || 0), 0) / rows.length,
+          div_yield: rows.reduce((sum, r) => sum + (r.div_yield || 0), 0) / rows.length,
+        };
+        aggregated.push(avgRow);
+      });
+  
+      return aggregated.sort((a, b) => new Date(a.index_date) - new Date(b.index_date));
+    };
+  
+    const filteredData = filteredDataByTimeRange(
+      rawData.filter(row => row.index_name === selectedIndex && row.closing_index_value !== null),
+      timeRange
+    );
+    console.log(`Filtered data for ${timeRange}:`, filteredData);
+  
+    const processedData = aggregateData(filteredData, timeRange);
+    console.log(`Processed data for ${timeRange}:`, processedData);
+  
+    if (processedData.length === 0) {
+      console.warn(`No data available for ${timeRange}`);
+      setChartData({
+        labels: [],
+        datasets: [
+          { label: 'Close Price', data: [], borderColor: 'rgba(75, 192, 192, 1)', backgroundColor: 'rgba(75, 192, 192, 0.2)', tension: 0.4, yAxisID: 'y', pointRadius: 0 },
+          { label: 'Open Price', data: [], borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)', tension: 0.4, yAxisID: 'y', pointRadius: 0 },
+          { label: 'High Price', data: [], borderColor: 'rgba(255, 99, 132, 1)', backgroundColor: 'rgba(255, 99, 132, 0.2)', tension: 0.4, yAxisID: 'y', pointRadius: 0 },
+          { label: 'Low Price', data: [], borderColor: 'rgba(255, 206, 86, 1)', backgroundColor: 'rgba(255, 206, 86, 0.2)', tension: 0.4, yAxisID: 'y', pointRadius: 0 },
+          { label: 'Volume', data: [], borderColor: 'rgba(153, 102, 255, 1)', backgroundColor: 'rgba(153, 102, 255, 0.2)', tension: 0.4, yAxisID: 'y1', pointRadius: 0 },
+        ],
+      });
+      return;
+    }
+  
+    const dates = processedData.map(row => row.index_date);
+    const closePrices = processedData.map(row => row.closing_index_value ?? 0);
+    const openPrices = processedData.map(row => row.open_index_value ?? 0);
+    const highPrices = processedData.map(row => row.high_index_value ?? 0);
+    const lowPrices = processedData.map(row => row.low_index_value ?? 0);
+    const volumes = processedData.map(row => row.volume ?? 0);
+  
+    processedData.sort((a, b) => new Date(a.index_date) - new Date(b.index_date));
+    const labels = processedData.map(row => {
+      const date = new Date(row.index_date);
+      return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+    });
+    const values = processedData.map(row => row.closing_index_value ?? 0);
+  
+    if (values.length > 0) {
+      const latest = values[values.length - 1];
+      const previous = values.length > 1 ? values[values.length - 2] : latest;
+      const change = latest - previous;
+      const percentChange = previous !== 0 ? (change / previous) * 100 : 0;
+  
+      setSelectedStock(prevStock => ({
+        ...prevStock,
+        symbol: selectedIndex,
+        name: selectedIndex,
+        ticker: selectedIndex,
+        currentPrice: latest,
+        priceChange: change,
+        percentChange: percentChange,
+        preMarketPrice: latest,
+        preMarketChange: change,
+        preMarketPercentChange: percentChange,
+        closeDate: labels[labels.length - 1],
+        preMarketTime: labels[labels.length - 1],
+      }));
+  
+      setIndexMetrics({
+        latestValue: latest.toFixed(2),
+        change: change.toFixed(2),
+        percentChange: percentChange.toFixed(2),
+        previousValue: previous.toFixed(2),
+        highestValue: Math.max(...values).toFixed(2),
+        lowestValue: Math.min(...values).toFixed(2),
+        avgValue: (values.reduce((sum, val) => sum + val, 0) / values.length).toFixed(2),
+      });
+  
+      setWatchlistStocks(prevStocks =>
+        prevStocks.map(stock =>
+          stock.symbol === selectedIndex
+            ? {
+                ...stock,
+                price: latest,
+                change: `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${percentChange.toFixed(2)}%)`,
+              }
+            : stock
+        )
+      );
+    }
+  
+    if (processedData.length > 0) {
+      const latest = processedData[processedData.length - 1];
+      const previous = processedData.length > 1 ? processedData[processedData.length - 2] : latest;
+  
+      setStockDetails({
+        previousClose: previous.closing_index_value ?? 0,
+        open: latest.open_index_value ?? 0,
+        daysRange: `${latest.low_index_value.toFixed(2) ?? 0} - ${latest.high_index_value.toFixed(2) ?? 0}`,
+        volume: latest.volume ?? 0,
+        peRatio: `${latest.pe_ratio.toFixed(2) ?? 0}`,
+        pbRatio: `${latest.pb_ratio.toFixed(2) ?? 0}`,
+        turnover: `${latest.turnover_rs_cr ?? 0}`,
+        pointsChange: `${latest.points_change.toFixed(2) ?? 0}`,
+        changePercent: `${latest.change_percent.toFixed(2) ?? 0}`,
+        divyield: `${latest.div_yield.toFixed(2) ?? 0}`,
+      });
+    }
+  
+    setChartData({
+      labels: labels,
+      datasets: [
+        {
+          label: 'Close Price',
+          data: closePrices,
+          borderColor: 'rgba(75, 192, 192, 1)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          tension: 0.4,
+          yAxisID: 'y',
+          pointRadius: 0,
+        },
+        {
+          label: 'Open Price',
+          data: openPrices,
+          borderColor: 'rgba(54, 162, 235, 1)',
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          tension: 0.4,
+          yAxisID: 'y',
+          pointRadius: 0,
+        },
+        {
+          label: 'High Price',
+          data: highPrices,
+          borderColor: 'rgba(255, 99, 132, 1)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          tension: 0.4,
+          yAxisID: 'y',
+          pointRadius: 0,
+        },
+        {
+          label: 'Low Price',
+          data: lowPrices,
+          borderColor: 'rgba(255, 206, 86, 1)',
+          backgroundColor: 'rgba(255, 206, 86, 0.2)',
+          tension: 0.4,
+          yAxisID: 'y',
+          pointRadius: 0,
+        },
+        {
+          label: 'Volume',
+          data: volumes,
+          borderColor: 'rgba(153, 102, 255, 1)',
+          backgroundColor: 'rgba(153, 102, 255, 0.2)',
+          tension: 0.4,
+          yAxisID: 'y1',
+          pointRadius: 0,
+        },
+      ],
+    });
+  }, [selectedIndex, timeRange, rawData]);
 
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
       y: {
-        type:'linear',
-        position:'left',
+        type: 'linear',
+        position: 'left',
         ticks: { color: '#aaa' },
-        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+        grid: { color: 'rgba(255, 255, 255, 0.1)' },
       },
-      y1:{
-        type:'linear',
-        position:'right',
-        ticks:{color:'#aaa'},
-        grid:{color:'rgba(255,255,255,0.1)'}
+      y1: {
+        type: 'linear',
+        position: 'right',
+        ticks: { color: '#aaa' },
+        grid: { drawOnChartArea: false },
       },
       x: {
         ticks: { color: '#aaa' },
-        grid: { color: 'rgba(255, 255, 255, 0.1)' }
-      }
+        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+      },
     },
     plugins: {
       legend: {
         position: 'bottom',
-        labels: { color: '#aaa' }
+        labels: { color: '#aaa' },
       },
     },
   };
- const handleTimeRangeChange = (range)=>{
-  setTimeRange(range);
- };
+
+  const handleTimeRangeChange = range => {
+    setTimeRange(range);
+  };
+
   const incomeChartData = {
     labels: incomeData.months,
     datasets: [
@@ -363,8 +446,8 @@ const labels = processedData.map(row=>{
         label: 'Net Income',
         data: incomeData.netIncome,
         backgroundColor: 'rgba(54, 162, 235, 0.8)',
-      }
-    ]
+      },
+    ],
   };
 
   const CapitalizationBar = ({ label, value, maxValue, color }) => {
@@ -376,16 +459,35 @@ const labels = processedData.map(row=>{
           <span className="text-light">{value}B</span>
         </div>
         <div className="progress" style={{ height: '20px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>
-          <div 
-            className="progress-bar" 
-            style={{ 
-              width: `${percentage}%`, 
-              backgroundColor: color
+          <div
+            className="progress-bar"
+            style={{
+              width: `${percentage}%`,
+              backgroundColor: color,
             }}
           />
         </div>
       </div>
     );
+  };
+
+  const handleSearchChange = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+    setShowSearchResults(query.length > 0);
+    if (query.length > 0) {
+      const filtered = indices.filter(index => index.toLowerCase().includes(query));
+      setSearchResults(filtered);
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  const handleSearchSelect = (index) => {
+    setSelectedIndex(index);
+    setSearchQuery('');
+    setShowSearchResults(false);
+    setSearchResults([]);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -402,14 +504,33 @@ const labels = processedData.map(row=>{
               </div>
             </div>
             <div className="position-relative mb-4">
-              <input 
-                type="text" 
-                className="form-control bg-dark text-light border-0" 
-                placeholder="Search" 
+              <input
+                type="text"
+                className="form-control bg-dark text-light border-0"
+                placeholder="Search"
                 style={{ paddingLeft: '30px' }}
+                value={searchQuery}
+                onChange={handleSearchChange}
               />
               <span style={{ position: 'absolute', top: '8px', left: '10px', color: '#777' }}>🔍</span>
-              <span style={{ position: 'absolute', top: '8px', right: '10px', color: '#777' }}>⌘K</span>
+              {showSearchResults && (
+                <div className="position-absolute w-100 bg-dark rounded mt-1" style={{ zIndex: 1000, maxHeight: '200px', overflowY: 'auto' }}>
+                  {searchResults.length > 0 ? (
+                    searchResults.map((result, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2 text-light hover-bg-secondary cursor-pointer"
+                        style={{ borderBottom: '1px solid #333' }}
+                        onClick={() => handleSearchSelect(result)}
+                      >
+                        {result}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-2 text-light">No results found</div>
+                  )}
+                </div>
+              )}
             </div>
             <ul className="nav flex-column mb-4">
               <li className="nav-item mb-2">
@@ -453,14 +574,17 @@ const labels = processedData.map(row=>{
               <span style={{ color: '#777' }}>⋮</span>
             </div>
             <div className="watchlist">
-              {watchlistStocks.map((stock) => (
-                <div 
-                  key={stock.symbol} 
+              {watchlistStocks.map(stock => (
+                <div
+                  key={stock.symbol}
                   className="d-flex justify-content-between align-items-center p-2 mb-1 rounded"
                   style={{ backgroundColor: stock.symbol === selectedStock.symbol ? '#2a2a2a' : 'transparent' }}
                 >
                   <div className="d-flex align-items-center">
-                    <div className="stock-logo me-2 rounded text-center" style={{ width: '24px', height: '24px', backgroundColor: '#f55', color: 'white', lineHeight: '24px', fontSize: '12px' }}>
+                    <div
+                      className="stock-logo me-2 rounded text-center"
+                      style={{ width: '24px', height: '24px', backgroundColor: '#f55', color: 'white', lineHeight: '24px', fontSize: '12px' }}
+                    >
                       {stock.logo}
                     </div>
                     <span>{stock.symbol}</span>
@@ -503,7 +627,10 @@ const labels = processedData.map(row=>{
           <div className="container-fluid p-4">
             <div className="mb-4">
               <div className="d-flex align-items-center mb-2">
-                <div className="stock-logo me-3 rounded text-center" style={{ width: '36px', height: '36px', backgroundColor: '#f55', color: 'white', lineHeight: '36px', fontSize: '16px' }}>
+                <div
+                  className="stock-logo me-3 rounded text-center"
+                  style={{ width: '36px', height: '36px', backgroundColor: '#f55', color: 'white', lineHeight: '36px', fontSize: '16px' }}
+                >
                   T
                 </div>
                 <h5 className="m-0">{selectedStock.name} • ({selectedStock.ticker})</h5>
@@ -512,14 +639,18 @@ const labels = processedData.map(row=>{
                 <div className="col-md-6">
                   <div className="d-flex align-items-baseline">
                     <h2 className="me-2">{selectedStock.currentPrice.toFixed(2)}</h2>
-                    <span style={{ color: 'lightgreen' }}>+{selectedStock.priceChange.toFixed(3)} (+{selectedStock.percentChange.toFixed(2)}%)</span>
+                    <span style={{ color: selectedStock.priceChange >= 0 ? 'lightgreen' : 'red' }}>
+                      {selectedStock.priceChange >= 0 ? '+' : ''}{selectedStock.priceChange.toFixed(2)} ({selectedStock.percentChange.toFixed(2)}%)
+                    </span>
                   </div>
                   <div className="text-secondary">At close: {selectedStock.closeDate}</div>
                 </div>
                 <div className="col-md-6">
                   <div className="d-flex align-items-baseline">
                     <h4 className="me-2">{selectedStock.preMarketPrice.toFixed(2)}</h4>
-                    <span style={{ color: 'lightgreen' }}>+{selectedStock.preMarketChange.toFixed(2)} (+{selectedStock.preMarketPercentChange.toFixed(2)}%)</span>
+                    <span style={{ color: selectedStock.preMarketChange >= 0 ? 'lightgreen' : 'red' }}>
+                      {selectedStock.preMarketChange >= 0 ? '+' : ''}{selectedStock.preMarketChange.toFixed(2)} ({selectedStock.preMarketPercentChange.toFixed(2)}%)
+                    </span>
                   </div>
                   <div className="text-secondary">Pre-Market: {selectedStock.preMarketTime}</div>
                 </div>
@@ -540,16 +671,48 @@ const labels = processedData.map(row=>{
             </div>
             <div className="mb-4">
               <div className="d-flex">
-                <button className={`btn btn-dark me-2 ${timeRange==='1D'? 'active':''}`}
-              onClick={()=>handleTimeRangeChange('1D')}>1D</button>
-                <button className={`btn btn-dark me-2 ${timeRange==='1W'?'active':''}`}
-                onClickClick={()=>handleTimeRangeChange('1W')}>1W</button>
-                <button className={`btn btn-dark me-2 active ${timeRange==='1M'?'active':''}`}
-              onClick={()=>handleTimeRangeChange('1M')}>1M</button>
-                <button className="btn btn-dark me-2">3M</button>
-                <button className="btn btn-dark me-2">1Y</button>
-                <button className="btn btn-dark me-2">5Y</button>
-                <button className="btn btn-dark">ALL</button>
+                <button
+                  className={`btn btn-dark me-2 ${timeRange === '1D' ? 'active' : ''}`}
+                  onClick={() => handleTimeRangeChange('1D')}
+                >
+                  1D
+                </button>
+                <button
+                  className={`btn btn-dark me-2 ${timeRange === '1W' ? 'active' : ''}`}
+                  onClick={() => handleTimeRangeChange('1W')}
+                >
+                  1W
+                </button>
+                <button
+                  className={`btn btn-dark me-2 ${timeRange === '1M' ? 'active' : ''}`}
+                  onClick={() => handleTimeRangeChange('1M')}
+                >
+                  1M
+                </button>
+                <button
+                  className={`btn btn-dark me-2 ${timeRange === '3M' ? 'active' : ''}`}
+                  onClick={() => handleTimeRangeChange('3M')}
+                >
+                  3M
+                </button>
+                <button
+                  className={`btn btn-dark me-2 ${timeRange === '1Y' ? 'active' : ''}`}
+                  onClick={() => handleTimeRangeChange('1Y')}
+                >
+                  1Y
+                </button>
+                <button
+                  className={`btn btn-dark me-2 ${timeRange === '5Y' ? 'active' : ''}`}
+                  onClick={() => handleTimeRangeChange('5Y')}
+                >
+                  5Y
+                </button>
+                <button
+                  className={`btn btn-dark ${timeRange === 'ALL' ? 'active' : ''}`}
+                  onClick={() => handleTimeRangeChange('ALL')}
+                >
+                  ALL
+                </button>
               </div>
             </div>
             <div className="row mb-4">
@@ -557,7 +720,7 @@ const labels = processedData.map(row=>{
                 <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
                   <div className="card-body p-3">
                     <h6 className="text-secondary mb-2">Previous Close</h6>
-                    <p className="m-0">{stockDetails.previousClose}</p>
+                    <p className="m-0">{stockDetails.previousClose.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
@@ -572,16 +735,16 @@ const labels = processedData.map(row=>{
               <div className="col-md-3 mb-3">
                 <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
                   <div className="card-body p-3">
-                    <h6 className="text-secondary mb-2">Market Cap (Intraday)</h6>
-                    <p className="m-0">{stockDetails.marketCap}</p>
+                    <h6 className="text-secondary mb-2">Turnover</h6>
+                    <p className="m-0">{stockDetails.turnover}</p>
                   </div>
                 </div>
               </div>
               <div className="col-md-3 mb-3">
                 <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
                   <div className="card-body p-3">
-                    <h6 className="text-secondary mb-2">Earnings Date</h6>
-                    <p className="m-0">{stockDetails.earningsDate}</p>
+                    <h6 className="text-secondary mb-2">Points change</h6>
+                    <p className="m-0">{stockDetails.pointsChange} %</p>
                   </div>
                 </div>
               </div>
@@ -589,39 +752,15 @@ const labels = processedData.map(row=>{
                 <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
                   <div className="card-body p-3">
                     <h6 className="text-secondary mb-2">Open</h6>
-                    <p className="m-0">{stockDetails.open}</p>
+                    <p className="m-0">{stockDetails.open.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
               <div className="col-md-3 mb-3">
                 <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
                   <div className="card-body p-3">
-                    <h6 className="text-secondary mb-2">52 Week Range</h6>
-                    <p className="m-0">{stockDetails.weekRange}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3 mb-3">
-                <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
-                  <div className="card-body p-3">
-                    <h6 className="text-secondary mb-2">Beta (5Y Monthly)</h6>
-                    <p className="m-0">{stockDetails.beta}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3 mb-3">
-                <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
-                  <div className="card-body p-3">
-                    <h6 className="text-secondary mb-2">Forward Dividend & Yield</h6>
-                    <p className="m-0">{stockDetails.forwardDividend}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3 mb-3">
-                <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
-                  <div className="card-body p-3">
-                    <h6 className="text-secondary mb-2">Bid</h6>
-                    <p className="m-0">{stockDetails.bid}</p>
+                    <h6 className="text-secondary mb-2">Percentage Change</h6>
+                    <p className="m-0">{stockDetails.changePercent} %</p>
                   </div>
                 </div>
               </div>
@@ -636,7 +775,7 @@ const labels = processedData.map(row=>{
               <div className="col-md-3 mb-3">
                 <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
                   <div className="card-body p-3">
-                    <h6 className="text-secondary mb-2">PE Ratio (TTM)</h6>
+                    <h6 className="text-secondary mb-2">PE Ratio</h6>
                     <p className="m-0">{stockDetails.peRatio}</p>
                   </div>
                 </div>
@@ -644,40 +783,16 @@ const labels = processedData.map(row=>{
               <div className="col-md-3 mb-3">
                 <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
                   <div className="card-body p-3">
-                    <h6 className="text-secondary mb-2">Ex-Dividend Date</h6>
-                    <p className="m-0">{stockDetails.exDividendDate}</p>
+                    <h6 className="text-secondary mb-2">PB Ratio</h6>
+                    <p className="m-0">{stockDetails.pbRatio}</p>
                   </div>
                 </div>
               </div>
               <div className="col-md-3 mb-3">
                 <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
                   <div className="card-body p-3">
-                    <h6 className="text-secondary mb-2">Ask</h6>
-                    <p className="m-0">{stockDetails.ask}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3 mb-3">
-                <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
-                  <div className="card-body p-3">
-                    <h6 className="text-secondary mb-2">Avg. Volume</h6>
-                    <p className="m-0">{stockDetails.avgVolume}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3 mb-3">
-                <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
-                  <div className="card-body p-3">
-                    <h6 className="text-secondary mb-2">EPS (TTM)</h6>
-                    <p className="m-0">{stockDetails.eps}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3 mb-3">
-                <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
-                  <div className="card-body p-3">
-                    <h6 className="text-secondary mb-2">1y Target Est</h6>
-                    <p className="m-0">{stockDetails.targetEst}</p>
+                    <h6 className="text-secondary mb-2">Div yeild</h6>
+                    <p className="m-0">{stockDetails.divyield}</p>
                   </div>
                 </div>
               </div>
@@ -701,8 +816,23 @@ const labels = processedData.map(row=>{
                         {incomeData.months.map((month, index) => (
                           <div key={month} className="d-flex flex-column align-items-center" style={{ width: `${100 / incomeData.months.length}%` }}>
                             <div className="d-flex flex-column-reverse" style={{ height: '80%', width: '100%' }}>
-                              <div style={{ height: `${incomeData.revenue[index] * 2}px`, backgroundColor: 'rgba(75, 192, 192, 0.8)', width: '60%', margin: '0 auto' }}></div>
-                              <div style={{ height: `${incomeData.netIncome[index] * 2}px`, backgroundColor: 'rgba(54, 162, 235, 0.8)', width: '60%', margin: '0 auto', marginBottom: '5px' }}></div>
+                              <div
+                                style={{
+                                  height: `${incomeData.revenue[index] * 2}px`,
+                                  backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                                  width: '60%',
+                                  margin: '0 auto',
+                                }}
+                              ></div>
+                              <div
+                                style={{
+                                  height: `${incomeData.netIncome[index] * 2}px`,
+                                  backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                                  width: '60%',
+                                  margin: '0 auto',
+                                  marginBottom: '5px',
+                                }}
+                              ></div>
                             </div>
                             <div className="text-center mt-2">
                               <div style={{ fontSize: '12px' }}>{month}</div>
