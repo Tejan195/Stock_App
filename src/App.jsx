@@ -1,19 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement, ArcElement } from 'chart.js';
+import { Line, Bar, Pie } from 'react-chartjs-2';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement, ArcElement);
 
 function App() {
-  const [watchlistStocks, setWatchlistStocks] = useState([
-    { symbol: 'NIFTY 50', name: 'Nifty 50', price: 0, change: '0', logo: 'T' },
-    { symbol: 'INTC', name: 'Intel Corporation', price: 0, change: '0', logo: 'IN' },
-    { symbol: 'AAPL', name: 'Apple Inc', price: 0, change: '0', logo: 'A' },
-    { symbol: 'GTOFF', name: 'GT Capital', price: 0, change: '0', logo: 'G' },
-  ]);
-
   const [selectedStock, setSelectedStock] = useState({
     symbol: '',
     name: '',
@@ -90,19 +83,15 @@ function App() {
     daysRange: 'N/A',
   });
 
-  const [incomeData, setIncomeData] = useState({
-    months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-    revenue: [0, 0, 0, 0, 0, 0, 0, 0],
-    netIncome: [0, 0, 0, 0, 0, 0, 0, 0],
+  const [monthlyPriceData, setMonthlyPriceData] = useState({
+    months: [],
+    avgClosePrices: [],
   });
 
-  const [capitalization, setCapitalization] = useState({
-    totalEnterpriseValue: 0,
-    totalCapital: 0,
-    netLiability: 0,
-    marketCap: 0,
-    commonEquity: 0,
-    totalLiability: 0,
+  const [priceChangeDistribution, setPriceChangeDistribution] = useState({
+    positiveDays: 0,
+    negativeDays: 0,
+    zeroDays: 0,
   });
 
   const [indexMetrics, setIndexMetrics] = useState({
@@ -124,11 +113,18 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchHistory, setSearchHistory] = useState([]);
+  const maxHistoryLength = 5;
 
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
       try {
+        const savedHistory = localStorage.getItem('searchHistory');
+        if (savedHistory) {
+          setSearchHistory(JSON.parse(savedHistory));
+        }
+
         Papa.parse('/dump.csv', {
           download: true,
           header: true,
@@ -158,8 +154,12 @@ function App() {
   }, []);
 
   useEffect(() => {
+    localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+  }, [searchHistory]);
+
+  useEffect(() => {
     if (!selectedIndex || !rawData.length) return;
-  
+
     const filteredDataByTimeRange = (data, range) => {
       const now = new Date('2024-03-23');
       const startDate = new Date(now);
@@ -182,34 +182,31 @@ function App() {
         case '5Y':
           startDate.setFullYear(now.getFullYear() - 5);
           break;
-        case 'ALL':
-          startDate = new Date('1900-01-01');
-          break;
         default:
           startDate.setMonth(now.getMonth() - 1);
           break;
       }
-  
+
       let filtered = data.filter(row => {
         const rowDate = new Date(row.index_date);
         return rowDate >= startDate && rowDate <= now;
       });
-  
+
       if (filtered.length === 0) {
         console.warn(`No data found for ${range}. Falling back to all available data.`);
         filtered = data;
       }
-  
+
       return filtered;
     };
-  
+
     const aggregateData = (data, range) => {
       if (range === '1D' || range === '1W' || range === '1M' || range === '1Y') {
         return data;
       }
       const aggregated = [];
       const interval = range === '3M' ? 'week' : 'month';
-  
+
       const groupedData = data.reduce((acc, row) => {
         const date = new Date(row.index_date);
         let key;
@@ -226,38 +223,103 @@ function App() {
         acc[key].rows.push(row);
         return acc;
       }, {});
-  
+
       Object.values(groupedData).forEach(group => {
         const rows = group.rows;
         const avgRow = {
           index_date: group.date,
-          closing_index_value: rows.reduce((sum, r) => sum + (r.closing_index_value || 0), 0) / rows.length,
-          open_index_value: rows.reduce((sum, r) => sum + (r.open_index_value || 0), 0) / rows.length,
-          high_index_value: rows.reduce((sum, r) => sum + (r.high_index_value || 0), 0) / rows.length,
-          low_index_value: rows.reduce((sum, r) => sum + (r.low_index_value || 0), 0) / rows.length,
-          volume: rows.reduce((sum, r) => sum + (r.volume || 0), 0) / rows.length,
-          pe_ratio: rows.reduce((sum, r) => sum + (r.pe_ratio || 0), 0) / rows.length,
-          pb_ratio: rows.reduce((sum, r) => sum + (r.pb_ratio || 0), 0) / rows.length,
-          turnover_rs_cr: rows.reduce((sum, r) => sum + (r.turnover_rs_cr || 0), 0) / rows.length,
-          points_change: rows.reduce((sum, r) => sum + (r.points_change || 0), 0) / rows.length,
-          change_percent: rows.reduce((sum, r) => sum + (r.change_percent || 0), 0) / rows.length,
-          div_yield: rows.reduce((sum, r) => sum + (r.div_yield || 0), 0) / rows.length,
+          closing_index_value: rows.reduce((sum, r) => sum + (Number(r.closing_index_value) || 0), 0) / rows.length,
+          open_index_value: rows.reduce((sum, r) => sum + (Number(r.open_index_value) || 0), 0) / rows.length,
+          high_index_value: rows.reduce((sum, r) => sum + (Number(r.high_index_value) || 0), 0) / rows.length,
+          low_index_value: rows.reduce((sum, r) => sum + (Number(r.low_index_value) || 0), 0) / rows.length,
+          volume: rows.reduce((sum, r) => sum + (Number(r.volume) || 0), 0) / rows.length,
+          pe_ratio: rows.reduce((sum, r) => sum + (Number(r.pe_ratio) || 0), 0) / rows.length,
+          pb_ratio: rows.reduce((sum, r) => sum + (Number(r.pb_ratio) || 0), 0) / rows.length,
+          turnover_rs_cr: rows.reduce((sum, r) => sum + (Number(r.turnover_rs_cr) || 0), 0) / rows.length,
+          points_change: rows.reduce((sum, r) => sum + (Number(r.points_change) || 0), 0) / rows.length,
+          change_percent: rows.reduce((sum, r) => sum + (Number(r.change_percent) || 0), 0) / rows.length,
+          div_yield: rows.reduce((sum, r) => sum + (Number(r.div_yield) || 0), 0) / rows.length,
         };
         aggregated.push(avgRow);
       });
-  
+
       return aggregated.sort((a, b) => new Date(a.index_date) - new Date(b.index_date));
     };
-  
+
     const filteredData = filteredDataByTimeRange(
       rawData.filter(row => row.index_name === selectedIndex && row.closing_index_value !== null),
       timeRange
     );
     console.log(`Filtered data for ${timeRange}:`, filteredData);
-  
+
     const processedData = aggregateData(filteredData, timeRange);
     console.log(`Processed data for ${timeRange}:`, processedData);
-  
+
+    // Compute Monthly Average Close Price for Bar Chart
+    const monthlyData = {};
+    filteredData.forEach(row => {
+      const date = new Date(row.index_date);
+      const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = {
+          closePrices: [],
+          date: date,
+        };
+      }
+      monthlyData[monthKey].closePrices.push(Number(row.closing_index_value) || 0);
+    });
+
+    const months = [];
+    const avgClosePrices = [];
+    Object.entries(monthlyData)
+      .sort((a, b) => new Date(a[1].date) - new Date(b[1].date))
+      .slice(-8)
+      .forEach(([key, value]) => {
+        const date = new Date(key.split('-')[0], key.split('-')[1] - 1);
+        months.push(date.toLocaleString('default', { month: 'short' }));
+        const avgClose = value.closePrices.length > 0
+          ? value.closePrices.reduce((sum, val) => sum + val, 0) / value.closePrices.length
+          : 0;
+        avgClosePrices.push(avgClose);
+      });
+
+    setMonthlyPriceData({
+      months: months.length > 0 ? months : ['No Data'],
+      avgClosePrices: avgClosePrices.length > 0 ? avgClosePrices : [0],
+    });
+
+    // Compute Price Change Distribution for Pie Chart (Latest Month)
+    const latestMonthData = Object.entries(monthlyData)
+      .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))[0];
+
+    let positiveDays = 0, negativeDays = 0, zeroDays = 0;
+    if (latestMonthData) {
+      const latestMonthKey = latestMonthData[0];
+      const latestMonthFilteredData = filteredData.filter(row => {
+        const date = new Date(row.index_date);
+        return `${date.getFullYear()}-${date.getMonth() + 1}` === latestMonthKey;
+      });
+
+      latestMonthFilteredData.forEach(row => {
+        const closePrice = Number(row.closing_index_value) || 0;
+        const openPrice = Number(row.open_index_value) || 0;
+        const priceChange = closePrice - openPrice;
+        if (priceChange > 0) {
+          positiveDays++;
+        } else if (priceChange < 0) {
+          negativeDays++;
+        } else {
+          zeroDays++;
+        }
+      });
+    }
+
+    setPriceChangeDistribution({
+      positiveDays,
+      negativeDays,
+      zeroDays,
+    });
+
     if (processedData.length === 0) {
       console.warn(`No data available for ${timeRange}`);
       setChartData({
@@ -272,27 +334,27 @@ function App() {
       });
       return;
     }
-  
+
     const dates = processedData.map(row => row.index_date);
     const closePrices = processedData.map(row => row.closing_index_value ?? 0);
     const openPrices = processedData.map(row => row.open_index_value ?? 0);
     const highPrices = processedData.map(row => row.high_index_value ?? 0);
     const lowPrices = processedData.map(row => row.low_index_value ?? 0);
     const volumes = processedData.map(row => row.volume ?? 0);
-  
+
     processedData.sort((a, b) => new Date(a.index_date) - new Date(b.index_date));
     const labels = processedData.map(row => {
       const date = new Date(row.index_date);
       return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
     });
     const values = processedData.map(row => row.closing_index_value ?? 0);
-  
+
     if (values.length > 0) {
       const latest = values[values.length - 1];
       const previous = values.length > 1 ? values[values.length - 2] : latest;
       const change = latest - previous;
       const percentChange = previous !== 0 ? (change / previous) * 100 : 0;
-  
+
       setSelectedStock(prevStock => ({
         ...prevStock,
         symbol: selectedIndex,
@@ -307,7 +369,7 @@ function App() {
         closeDate: labels[labels.length - 1],
         preMarketTime: labels[labels.length - 1],
       }));
-  
+
       setIndexMetrics({
         latestValue: latest.toFixed(2),
         change: change.toFixed(2),
@@ -317,38 +379,29 @@ function App() {
         lowestValue: Math.min(...values).toFixed(2),
         avgValue: (values.reduce((sum, val) => sum + val, 0) / values.length).toFixed(2),
       });
-  
-      setWatchlistStocks(prevStocks =>
-        prevStocks.map(stock =>
-          stock.symbol === selectedIndex
-            ? {
-                ...stock,
-                price: latest,
-                change: `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${percentChange.toFixed(2)}%)`,
-              }
-            : stock
-        )
-      );
     }
-  
+
     if (processedData.length > 0) {
       const latest = processedData[processedData.length - 1];
       const previous = processedData.length > 1 ? processedData[processedData.length - 2] : latest;
-  
+
+      const lowValue = Number(latest.low_index_value) || 0;
+      const highValue = Number(latest.high_index_value) || 0;
+
       setStockDetails({
-        previousClose: previous.closing_index_value ?? 0,
-        open: latest.open_index_value ?? 0,
-        daysRange: `${latest.low_index_value.toFixed(2) ?? 0} - ${latest.high_index_value.toFixed(2) ?? 0}`,
-        volume: latest.volume ?? 0,
-        peRatio: `${latest.pe_ratio.toFixed(2) ?? 0}`,
-        pbRatio: `${latest.pb_ratio.toFixed(2) ?? 0}`,
-        turnover: `${latest.turnover_rs_cr ?? 0}`,
-        pointsChange: `${latest.points_change.toFixed(2) ?? 0}`,
-        changePercent: `${latest.change_percent.toFixed(2) ?? 0}`,
-        divyield: `${latest.div_yield.toFixed(2) ?? 0}`,
+        previousClose: Number(previous.closing_index_value) || 0,
+        open: Number(latest.open_index_value) || 0,
+        daysRange: `${lowValue.toFixed(2)} - ${highValue.toFixed(2)}`,
+        volume: Number(latest.volume) || 0,
+        peRatio: `${(Number(latest.pe_ratio) || 0).toFixed(2)}`,
+        pbRatio: `${(Number(latest.pb_ratio) || 0).toFixed(2)}`,
+        turnover: `${Number(latest.turnover_rs_cr) || 0}`,
+        pointsChange: `${(Number(latest.points_change) || 0).toFixed(2)}`,
+        changePercent: `${(Number(latest.change_percent) || 0).toFixed(2)}`,
+        divyield: `${(Number(latest.div_yield) || 0).toFixed(2)}`,
       });
     }
-  
+
     setChartData({
       labels: labels,
       datasets: [
@@ -356,50 +409,114 @@ function App() {
           label: 'Close Price',
           data: closePrices,
           borderColor: 'rgba(75, 192, 192, 1)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          backgroundColor: 'rgba(75, 192, 192, 0.1)',
           tension: 0.4,
           yAxisID: 'y',
-          pointRadius: 0,
+          borderWidth: 2,
+          pointRadius: 2,
+          pointHoverRadius: 6,
         },
         {
           label: 'Open Price',
           data: openPrices,
           borderColor: 'rgba(54, 162, 235, 1)',
-          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          backgroundColor: 'rgba(54, 162, 235, 0.1)',
           tension: 0.4,
           yAxisID: 'y',
-          pointRadius: 0,
+          borderWidth: 2,
+          pointRadius: 2,
+          pointHoverRadius: 6,
         },
         {
           label: 'High Price',
           data: highPrices,
           borderColor: 'rgba(255, 99, 132, 1)',
-          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          backgroundColor: 'rgba(255, 99, 132, 0.1)',
           tension: 0.4,
           yAxisID: 'y',
-          pointRadius: 0,
+          borderWidth: 2,
+          pointRadius: 2,
+          pointHoverRadius: 6,
         },
         {
           label: 'Low Price',
           data: lowPrices,
           borderColor: 'rgba(255, 206, 86, 1)',
-          backgroundColor: 'rgba(255, 206, 86, 0.2)',
+          backgroundColor: 'rgba(255, 206, 86, 0.1)',
           tension: 0.4,
           yAxisID: 'y',
-          pointRadius: 0,
+          borderWidth: 2,
+          pointRadius: 2,
+          pointHoverRadius: 6,
         },
         {
           label: 'Volume',
           data: volumes,
           borderColor: 'rgba(153, 102, 255, 1)',
-          backgroundColor: 'rgba(153, 102, 255, 0.2)',
+          backgroundColor: 'rgba(153, 102, 255, 0.1)',
           tension: 0.4,
           yAxisID: 'y1',
-          pointRadius: 0,
+          borderWidth: 2,
+          pointRadius: 2,
+          pointHoverRadius: 6,
         },
       ],
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            labels: {
+              color: '#fff',
+              font: {
+                size: 14,
+              },
+              padding: 15,
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: function(tooltipItem) {
+                return `${tooltipItem.dataset.label}: ${tooltipItem.raw.toLocaleString()}`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            ticks: {
+              color: '#fff',
+              callback: function(value) {
+                return Intl.NumberFormat('en-US', { notation: "compact" }).format(value);
+              }
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.2)',
+            },
+          },
+          y1: {
+            position: 'right',
+            ticks: {
+              color: '#fff',
+              callback: function(value) {
+                return Intl.NumberFormat('en-US', { notation: "compact" }).format(value);
+              }
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.2)',
+            },
+          },
+          x: {
+            ticks: {
+              color: '#fff',
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.2)',
+            },
+          },
+        },
+      },
     });
-  }, [selectedIndex, timeRange, rawData]);
+  }, [selectedIndex, rawData, timeRange]);
 
   const chartOptions = {
     responsive: true,
@@ -430,45 +547,136 @@ function App() {
     },
   };
 
-  const handleTimeRangeChange = range => {
-    setTimeRange(range);
-  };
-
-  const incomeChartData = {
-    labels: incomeData.months,
+  const monthlyPriceChartData = {
+    labels: monthlyPriceData.months,
     datasets: [
       {
-        label: 'Revenue',
-        data: incomeData.revenue,
+        label: 'Average Close Price',
+        data: monthlyPriceData.avgClosePrices,
         backgroundColor: 'rgba(75, 192, 192, 0.8)',
-      },
-      {
-        label: 'Net Income',
-        data: incomeData.netIncome,
-        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
       },
     ],
   };
 
-  const CapitalizationBar = ({ label, value, maxValue, color }) => {
-    const percentage = (value / maxValue) * 100;
-    return (
-      <div className="cap-bar mb-2">
-        <div className="d-flex justify-content-between mb-1">
-          <span className="text-light">{label}</span>
-          <span className="text-light">{value}B</span>
-        </div>
-        <div className="progress" style={{ height: '20px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>
-          <div
-            className="progress-bar"
-            style={{
-              width: `${percentage}%`,
-              backgroundColor: color,
-            }}
-          />
-        </div>
-      </div>
-    );
+  const monthlyPriceChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          color: '#aaa',
+          font: {
+            size: 14,
+          },
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: function (tooltipItem) {
+            return `${tooltipItem.dataset.label}: ${tooltipItem.raw.toLocaleString()}`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: '#aaa',
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)',
+        },
+      },
+      y: {
+        ticks: {
+          color: '#aaa',
+          callback: function (value) {
+            return Intl.NumberFormat('en-US', { notation: 'compact' }).format(value);
+          },
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)',
+        },
+      },
+    },
+  };
+
+  const priceChangeChartData = {
+    labels: ['Positive Days', 'Negative Days', 'Zero Change Days'],
+    datasets: [
+      {
+        label: 'Price Change Distribution',
+        data: [
+          priceChangeDistribution.positiveDays,
+          priceChangeDistribution.negativeDays,
+          priceChangeDistribution.zeroDays,
+        ],
+        backgroundColor: [
+          'rgba(75, 192, 192, 0.8)', 
+          'rgba(255, 99, 132, 0.8)', 
+          'rgba(255, 206, 86, 0.8)', 
+        ],
+        borderColor: [
+          'rgba(75, 192, 192, 1)',
+          'rgba(255, 99, 132, 1)',
+          'rgba(255, 206, 86, 1)',
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const priceChangeChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: {
+          color: '#aaa',
+          font: {
+            size: 14,
+          },
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: function (tooltipItem) {
+            const label = tooltipItem.label || '';
+            const value = tooltipItem.raw || 0;
+            return `${label}: ${value} days`;
+          },
+        },
+      },
+    },
+  };
+
+  const getStockDetailsForIndex = (index) => {
+    const data = rawData.filter(row => row.index_name === index && row.closing_index_value !== null);
+    if (data.length === 0) {
+      return { price: 0, change: '0', logo: index.charAt(0).toUpperCase() };
+    }
+
+    const sortedData = data.sort((a, b) => new Date(b.index_date) - new Date(a.index_date));
+    const latest = sortedData[0];
+    const previous = sortedData.length > 1 ? sortedData[1] : latest;
+
+    const price = Number(latest.closing_index_value) || 0;
+    const change = price - (Number(previous.closing_index_value) || 0);
+    const percentChange = previous.closing_index_value !== 0 ? (change / previous.closing_index_value) * 100 : 0;
+
+    return {
+      price: price,
+      change: `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${percentChange.toFixed(2)}%)`,
+      logo: index.charAt(0).toUpperCase(),
+    };
+  };
+
+  const handleTimeRangeChange = range => {
+    setTimeRange(range);
   };
 
   const handleSearchChange = (e) => {
@@ -488,6 +696,12 @@ function App() {
     setSearchQuery('');
     setShowSearchResults(false);
     setSearchResults([]);
+
+    setSearchHistory((prevHistory) => {
+      const updatedHistory = prevHistory.filter((item) => item !== index);
+      updatedHistory.unshift(index);
+      return updatedHistory.slice(0, maxHistoryLength);
+    });
   };
 
   if (loading) return <div>Loading...</div>;
@@ -574,27 +788,35 @@ function App() {
               <span style={{ color: '#777' }}>⋮</span>
             </div>
             <div className="watchlist">
-              {watchlistStocks.map(stock => (
-                <div
-                  key={stock.symbol}
-                  className="d-flex justify-content-between align-items-center p-2 mb-1 rounded"
-                  style={{ backgroundColor: stock.symbol === selectedStock.symbol ? '#2a2a2a' : 'transparent' }}
-                >
-                  <div className="d-flex align-items-center">
+              {searchHistory.length === 0 ? (
+                <div className="p-2 text-light">No recent searches</div>
+              ) : (
+                searchHistory.map((index) => {
+                  const { price, change, logo } = getStockDetailsForIndex(index);
+                  return (
                     <div
-                      className="stock-logo me-2 rounded text-center"
-                      style={{ width: '24px', height: '24px', backgroundColor: '#f55', color: 'white', lineHeight: '24px', fontSize: '12px' }}
+                      key={index}
+                      className="d-flex justify-content-between align-items-center p-2 mb-1 rounded cursor-pointer"
+                      style={{ backgroundColor: index === selectedIndex ? '#2a2a2a' : 'transparent' }}
+                      onClick={() => setSelectedIndex(index)}
                     >
-                      {stock.logo}
+                      <div className="d-flex align-items-center">
+                        <div
+                          className="stock-logo me-2 rounded text-center"
+                          style={{ width: '24px', height: '24px', backgroundColor: '#f55', color: 'white', lineHeight: '24px', fontSize: '12px' }}
+                        >
+                          {logo}
+                        </div>
+                        <span>{index}</span>
+                      </div>
+                      <div className="text-end">
+                        <div>{price.toFixed(2)}</div>
+                        <div style={{ color: change.startsWith('+') ? 'lightgreen' : 'red' }}>{change}</div>
+                      </div>
                     </div>
-                    <span>{stock.symbol}</span>
-                  </div>
-                  <div className="text-end">
-                    <div>{stock.price.toFixed(2)}</div>
-                    <div style={{ color: stock.change.startsWith('+') ? 'lightgreen' : 'red' }}>{stock.change}</div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })
+              )}
             </div>
           </div>
           <div className="position-fixed bottom-0 start-0" style={{ width: '240px' }}>
@@ -631,7 +853,7 @@ function App() {
                   className="stock-logo me-3 rounded text-center"
                   style={{ width: '36px', height: '36px', backgroundColor: '#f55', color: 'white', lineHeight: '36px', fontSize: '16px' }}
                 >
-                  T
+                  {selectedIndex ? selectedIndex.charAt(0).toUpperCase() : 'T'}
                 </div>
                 <h5 className="m-0">{selectedStock.name} • ({selectedStock.ticker})</h5>
               </div>
@@ -706,12 +928,6 @@ function App() {
                   onClick={() => handleTimeRangeChange('5Y')}
                 >
                   5Y
-                </button>
-                <button
-                  className={`btn btn-dark ${timeRange === 'ALL' ? 'active' : ''}`}
-                  onClick={() => handleTimeRangeChange('ALL')}
-                >
-                  ALL
                 </button>
               </div>
             </div>
@@ -804,42 +1020,14 @@ function App() {
                   <div className="card-body p-3">
                     <div className="d-flex justify-content-between align-items-center mb-3">
                       <h6 className="m-0 d-flex align-items-center">
-                        <span className="me-2">📋</span> Income Statements
+                        <span className="me-2">📈</span> Monthly Price Trends
                       </h6>
                       <div>
-                        <span className="badge bg-primary me-2">Revenue</span>
-                        <span className="badge bg-info">Net Income</span>
+                        <span className="badge bg-primary me-2">Avg Close Price</span>
                       </div>
                     </div>
                     <div style={{ height: '200px' }}>
-                      <div className="d-flex justify-content-between" style={{ height: '100%' }}>
-                        {incomeData.months.map((month, index) => (
-                          <div key={month} className="d-flex flex-column align-items-center" style={{ width: `${100 / incomeData.months.length}%` }}>
-                            <div className="d-flex flex-column-reverse" style={{ height: '80%', width: '100%' }}>
-                              <div
-                                style={{
-                                  height: `${incomeData.revenue[index] * 2}px`,
-                                  backgroundColor: 'rgba(75, 192, 192, 0.8)',
-                                  width: '60%',
-                                  margin: '0 auto',
-                                }}
-                              ></div>
-                              <div
-                                style={{
-                                  height: `${incomeData.netIncome[index] * 2}px`,
-                                  backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                                  width: '60%',
-                                  margin: '0 auto',
-                                  marginBottom: '5px',
-                                }}
-                              ></div>
-                            </div>
-                            <div className="text-center mt-2">
-                              <div style={{ fontSize: '12px' }}>{month}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <Bar data={monthlyPriceChartData} options={monthlyPriceChartOptions} />
                     </div>
                   </div>
                 </div>
@@ -849,15 +1037,12 @@ function App() {
                   <div className="card-body p-3">
                     <div className="d-flex justify-content-between align-items-center mb-3">
                       <h6 className="m-0 d-flex align-items-center">
-                        <span className="me-2">📊</span> Capitalizations Overview
+                        <span className="me-2">📊</span> Latest Month Price Change Distribution
                       </h6>
                       <span>⋮</span>
                     </div>
-                    <div className="mt-4">
-                      <CapitalizationBar label="Net Liability" value={capitalization.netLiability} maxValue={200} color="#4dabf7" />
-                      <CapitalizationBar label="Market Cap" value={capitalization.marketCap} maxValue={200} color="#4dabf7" />
-                      <CapitalizationBar label="Common Equity" value={capitalization.commonEquity} maxValue={200} color="#82c91e" />
-                      <CapitalizationBar label="Total Liability" value={capitalization.totalLiability} maxValue={200} color="#82c91e" />
+                    <div style={{ height: '200px' }}>
+                      <Pie data={priceChangeChartData} options={priceChangeChartOptions} />
                     </div>
                   </div>
                 </div>
