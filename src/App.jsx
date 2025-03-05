@@ -874,7 +874,7 @@ function App() {
               <div className="row">
                 <div className="col-md-6">
                   <div className="d-flex align-items-baseline">
-                    <h2 className="me-2">{selectedStock.currentPrice.toFixed(2)}</h2>
+                    <h2 className="me-2">₹ {selectedStock.currentPrice.toFixed(2)}</h2>
                     <span style={{ color: selectedStock.priceChange >= 0 ? 'lightgreen' : 'red' }}>
                       {selectedStock.priceChange >= 0 ? '+' : ''}{selectedStock.priceChange.toFixed(2)} ({selectedStock.percentChange.toFixed(2)}%)
                     </span>
@@ -883,7 +883,7 @@ function App() {
                 </div>
                 <div className="col-md-6">
                   <div className="d-flex align-items-baseline">
-                    <h4 className="me-2">{selectedStock.preMarketPrice.toFixed(2)}</h4>
+                    <h4 className="me-2">₹ {selectedStock.preMarketPrice.toFixed(2)}</h4>
                     <span style={{ color: selectedStock.preMarketChange >= 0 ? 'lightgreen' : 'red' }}>
                       {selectedStock.preMarketChange >= 0 ? '+' : ''}{selectedStock.preMarketChange.toFixed(2)} ({selectedStock.preMarketPercentChange.toFixed(2)}%)
                     </span>
@@ -950,7 +950,7 @@ function App() {
                 <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
                   <div className="card-body p-3">
                     <h6 className="text-secondary mb-2">Previous Close</h6>
-                    <p className="m-0">{stockDetails.previousClose.toFixed(2)}</p>
+                    <p className="m-0">₹ {stockDetails.previousClose.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
@@ -958,7 +958,7 @@ function App() {
                 <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
                   <div className="card-body p-3">
                     <h6 className="text-secondary mb-2">Day's Range</h6>
-                    <p className="m-0">{stockDetails.daysRange}</p>
+                    <p className="m-0">₹ {stockDetails.daysRange}</p>
                   </div>
                 </div>
               </div>
@@ -966,7 +966,7 @@ function App() {
                 <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
                   <div className="card-body p-3">
                     <h6 className="text-secondary mb-2">Turnover</h6>
-                    <p className="m-0">{stockDetails.turnover}</p>
+                    <p className="m-0">₹ {stockDetails.turnover}</p>
                   </div>
                 </div>
               </div>
@@ -998,7 +998,7 @@ function App() {
                 <div className="card text-light" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
                   <div className="card-body p-3">
                     <h6 className="text-secondary mb-2">Volume</h6>
-                    <p className="m-0">{stockDetails.volume}</p>
+                    <p className="m-0">₹ {stockDetails.volume}</p>
                   </div>
                 </div>
               </div>
