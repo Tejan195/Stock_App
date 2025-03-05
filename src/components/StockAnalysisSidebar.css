@@ -1,7 +1,7 @@
 .stock-analysis-sidebar {
     position: fixed;
     top: 0;
-    right: -400px; /* Hidden by default */
+    right: -400px;
     width: 400px;
     height: 100%;
     background-color: #1a1a1a;
@@ -13,7 +13,7 @@
   }
   
   .stock-analysis-sidebar.open {
-    right: 0; /* Slide in when open */
+    right: 0; 
   }
   
   .sidebar-header {

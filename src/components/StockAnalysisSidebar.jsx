@@ -16,11 +16,8 @@ const StockAnalysisSidebar = ({ isOpen, toggleSidebar, stockData, stockName }) =
       setAnalysis('');
 
       try {
-        // Initialize the Gemini API client
         const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-        // Prepare the prompt with stock data
         const historicalData = stockData.slice(-30).map((data, index) => ({
           date: data.date,
           closePrice: data.closePrice,

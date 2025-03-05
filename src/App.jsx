@@ -712,7 +712,12 @@ function App() {
     setSidebarOpen(!sidebarOpen);
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className="loading-container">
+    <div className="spinner-border text-light" role="status">
+      <span className="visually-hidden">Loading...</span>
+    </div>
+    <p className="text-light mt-2">Fetching...</p>
+      </div>;
   if (error) return <div>Error: {error.message}</div>;
 
   return (
@@ -837,21 +842,21 @@ function App() {
         <div className="col">
           <nav className="navbar navbar-dark" style={{ backgroundColor: '#121212', borderBottom: '1px solid #333' }}>
             <div className="container-fluid">
-              <div className="d-flex">
-              <button className="btn btn-dark d-lg-none me-2" onClick={toggleSidebar}>
+              <div className="d-flex align-items-center navbar-left">
+              <button className="btn btn-dark d-lg-none me-2 navbar-hamburger" onClick={toggleSidebar}>
                   ☰
                 </button>
                 <span className="text-secondary me-2">Dashboard</span>
                 <span className="text-secondary mx-1">/</span>
                 <span className="text-light">Details Stock</span>
               </div>
-              <div className="d-flex">
-                <button className="btn btn-dark me-2"onClick={handleAnalyzeStock}>
+              <div className="d-flex navbar-right">
+                <button className="btn btn-dark me-2 navbar-btn"onClick={handleAnalyzeStock}>
                   <span className="me-1">🤖</span>AI Analyzer
                 </button>
-                <button className="btn btn-dark me-2">🔖</button>
-                <button className="btn btn-dark me-2">🔗</button>
-                <button className="btn btn-dark">⋮</button>
+                <button className="btn btn-dark me-2 navbar-btn">🔖</button>
+                <button className="btn btn-dark me-2 navbar-btn">🔗</button>
+                <button className="btn btn-dark navbar-btn">⋮</button>
               </div>
             </div>
           </nav>
