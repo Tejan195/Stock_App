@@ -7,6 +7,15 @@ const StockAnalysisSidebar = ({ isOpen, toggleSidebar, stockData, stockName }) =
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const stripMarkdown = (text) => {
+    return text
+      .replace(/\#{1,6}\s*/g, '') 
+      .replace(/\*\*/g, '')        
+      .replace(/\*/g, '')         
+      .replace(/`{1,3}/g, '')     
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1');
+  };
+
   useEffect(() => {
     if (!isOpen || !stockData || stockData.length === 0) return;
 
@@ -34,12 +43,13 @@ const StockAnalysisSidebar = ({ isOpen, toggleSidebar, stockData, stockName }) =
           2. A prediction for the stock's price movement over the next 30 days, including potential high and low points.
           3. Any recommendations for investors (e.g., buy, sell, hold) based on your analysis.
 
-          Ensure your response is clear, concise, and suitable for an investor audience.
+          Ensure your response is in plain text format. Do not use any Markdown syntax (e.g., avoid using #, ##, **, etc.).
         `;
         const result = await model.generateContent(prompt);
         const responseText = result.response.text();
 
-        setAnalysis(responseText);
+        const cleanedAnalysis = stripMarkdown(responseText);
+        setAnalysis(cleanedAnalysis);
       } catch (err) {
         console.error('Error fetching analysis from Gemini API:', err);
         setError('Failed to analyze stock data. Please try again later.');
