@@ -73,7 +73,7 @@ body {
 }
 
 .card-body {
-  padding: 20px;
+  padding: 15px;
 }
 
 /* Navigation */
@@ -102,7 +102,7 @@ body {
 
 /* Watchlist */
 .watchlist > div {
-  padding: 12px;
+  padding: 10px;
   border-radius: 8px;
   transition: background-color 0.3s ease;
 }
@@ -112,19 +112,6 @@ body {
   cursor: pointer;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* Progress Bars */
-.progress {
-  border-radius: 8px;
-  overflow: hidden;
-  background-color: #333;
-  height: 12px;
-}
-
-.progress-bar {
-  background-color: #4dabf7;
-  transition: width 0.3s ease;
 }
 
 /* Stock Logo */
@@ -144,99 +131,142 @@ body {
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
   color: white;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
-h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-}
+h1 { font-size: 2rem; font-weight: 700; }
+h2 { font-size: 1.75rem; font-weight: 600; }
+h3 { font-size: 1.5rem; font-weight: 600; }
+h4 { font-size: 1.25rem; font-weight: 600; }
+h5 { font-size: 1.1rem; font-weight: 600; }
+h6 { font-size: 0.9rem; font-weight: 600; }
 
-h2 {
-  font-size: 2rem;
-  font-weight: 600;
-}
-
-h3 {
-  font-size: 1.75rem;
-  font-weight: 600;
-}
-
-h4 {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-h5 {
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-h6 {
-  font-size: 1rem;
-  font-weight: 600;
+/* Charts */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 300px;
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 991px) {
+  /* Adjust sidebar to be hidden or collapsible */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -260px;
+    width: 260px;
+    height: 100%;
+    background-color: #121212;
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .navbar {
+    padding: 10px 15px;
+  }
+
   .btn-dark, .btn-outline-secondary {
-      padding: 6px 12px;
-      font-size: 14px;
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+
+  .stock-logo {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .chart-container {
+    height: 250px;
+  }
+
+  .card-body {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 767px) {
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 1.1rem; }
+  h4 { font-size: 1rem; }
+  h5 { font-size: 0.9rem; }
+  h6 { font-size: 0.8rem; }
+
+  .btn-dark, .btn-outline-secondary {
+    padding: 5px 10px;
+    font-size: 12px;
   }
 
   .card {
-      margin-bottom: 16px;
+    margin-bottom: 12px;
   }
 
-  .nav-link {
-      padding: 6px 10px;
+  .chart-container {
+    height: 200px;
   }
 
   .watchlist > div {
-      padding: 8px;
+    padding: 8px;
+  }
+
+  .stock-logo {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .navbar .d-flex {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .navbar .d-flex button {
+    margin-bottom: 5px;
+  }
+}
+
+@media (max-width: 576px) {
+  .container-fluid {
+    padding: 10px;
+  }
+
+  .btn-dark, .btn-outline-secondary {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .chart-container {
+    height: 180px;
+  }
+
+  .card-body {
+    padding: 10px;
+  }
+
+  .search-input {
+    font-size: 14px;
   }
 }
 
 /* Animations */
 @keyframes fadeIn {
-  from {
-      opacity: 0;
-      transform: translateY(10px);
-  }
-  to {
-      opacity: 1;
-      transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .fade-in {
   animation: fadeIn 0.5s ease-in-out;
 }
 
-/* Additional Styling */
-.text-secondary {
-  color: #888 !important;
-}
-
-.text-light {
-  color: #e0e0e0 !important;
-}
-
-.bg-dark {
-  background-color: #1a1a1a !important;
-}
-
-.bg-secondary {
-  background-color: #2a2a2a !important;
-}
-
-.border-secondary {
-  border-color: #444 !important;
-}
-
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {

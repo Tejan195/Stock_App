@@ -95,16 +95,6 @@ function App() {
     zeroDays: 0,
   });
 
-  const [indexMetrics, setIndexMetrics] = useState({
-    latestValue: 0,
-    change: 0,
-    percentChange: 0,
-    previousValue: 0,
-    highestValue: 0,
-    lowestValue: 0,
-    avgValue: 0,
-  });
-
   const [selectedIndex, setSelectedIndex] = useState('');
   const [indices, setIndices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -117,6 +107,7 @@ function App() {
   const [searchHistory, setSearchHistory] = useState([]);
   const [historicalStockData, setHistoricalStockData] = useState([]);
   const [showAnalysisSidebar, setShowAnalysisSidebar] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const maxHistoryLength = 5;
 
   useEffect(() => {
@@ -370,16 +361,6 @@ function App() {
         closeDate: labels[labels.length - 1],
         preMarketTime: labels[labels.length - 1],
       }));
-
-      setIndexMetrics({
-        latestValue: latest.toFixed(2),
-        change: change.toFixed(2),
-        percentChange: percentChange.toFixed(2),
-        previousValue: previous.toFixed(2),
-        highestValue: Math.max(...values).toFixed(2),
-        lowestValue: Math.min(...values).toFixed(2),
-        avgValue: (values.reduce((sum, val) => sum + val, 0) / values.length).toFixed(2),
-      });
     }
 
     if (processedData.length > 0) {
@@ -543,7 +524,10 @@ function App() {
     plugins: {
       legend: {
         position: 'bottom',
-        labels: { color: '#aaa' },
+        labels: { color: '#fff'
+         },
+         bocWidth:20,
+         padding:15,
       },
     },
   };
@@ -724,14 +708,23 @@ function App() {
   const toggleAnalysisSidebar = () => {
     setShowAnalysisSidebar(!showAnalysisSidebar);
   };
+  const toggleSidebar = () => { 
+    setSidebarOpen(!sidebarOpen);
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
 
   return (
     <div className="container-fluid p-0" style={{ backgroundColor: '#1e1e1e', minHeight: '100vh', color: 'white' }}>
+      {sidebarOpen &&(
+        <div className="sidebar-overlay"
+        style={{ position:'fixed',top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.5)', zIndex:999}}
+        onClick={toggleSidebar}
+        ></div>
+      )}
       <div className="row g-0">
-        <div className="col-auto d-none d-lg-block" style={{ width: '240px', backgroundColor: '#121212', minHeight: '100vh', borderRight: '1px solid #333' }}>
+      <div className={`col-auto sidebar ${sidebarOpen ? 'open' : ''} d-lg-block`} style={{ width: '240px', backgroundColor: '#121212', minHeight: '100vh', borderRight: '1px solid #333' }}>
           <div className="p-3">
             <div className="d-flex align-items-center mb-4">
               <div className="me-2 text-white fw-bold fs-5">
@@ -845,13 +838,16 @@ function App() {
           <nav className="navbar navbar-dark" style={{ backgroundColor: '#121212', borderBottom: '1px solid #333' }}>
             <div className="container-fluid">
               <div className="d-flex">
+              <button className="btn btn-dark d-lg-none me-2" onClick={toggleSidebar}>
+                  ☰
+                </button>
                 <span className="text-secondary me-2">Dashboard</span>
                 <span className="text-secondary mx-1">/</span>
                 <span className="text-light">Details Stock</span>
               </div>
               <div className="d-flex">
                 <button className="btn btn-dark me-2"onClick={handleAnalyzeStock}>
-                  <span className="me-1">🔍</span> Analyze Stock
+                  <span className="me-1">🤖</span>AI Analyzer
                 </button>
                 <button className="btn btn-dark me-2">🔖</button>
                 <button className="btn btn-dark me-2">🔗</button>
