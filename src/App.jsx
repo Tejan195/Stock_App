@@ -158,12 +158,6 @@ function App() {
       const now = new Date('2024-03-23');
       const startDate = new Date(now);
       switch (range) {
-        case '1D':
-          startDate.setDate(now.getDate() - 1);
-          break;
-        case '1W':
-          startDate.setDate(now.getDate() - 7);
-          break;
         case '1M':
           startDate.setMonth(now.getMonth() - 1);
           break;
@@ -907,18 +901,6 @@ function App() {
             </div>
             <div className="mb-4">
               <div className="d-flex">
-                <button
-                  className={`btn btn-dark me-2 ${timeRange === '1D' ? 'active' : ''}`}
-                  onClick={() => handleTimeRangeChange('1D')}
-                >
-                  1D
-                </button>
-                <button
-                  className={`btn btn-dark me-2 ${timeRange === '1W' ? 'active' : ''}`}
-                  onClick={() => handleTimeRangeChange('1W')}
-                >
-                  1W
-                </button>
                 <button
                   className={`btn btn-dark me-2 ${timeRange === '1M' ? 'active' : ''}`}
                   onClick={() => handleTimeRangeChange('1M')}

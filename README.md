@@ -12,7 +12,8 @@ Deployed Link: [https://tejstock-app.netlify.app/#](https://tejstock-app.netlify
 
 ### Stock Data Visualization
 - **Interactive Charts**: Visualize stock data with dynamic Line, Bar, and Pie charts powered by Chart.js.
-  - **Line Chart**: Displays Close, Open, High, Low prices, and Volume over customizable time ranges (1D, 1W, 1M, 3M, 1Y, 5Y).
+  - **Line Chart**: Displays Close, Open, High, Low prices, and Volume over customizable time ranges 
+  ( 1M, 3M, 1Y, 5Y).
   - **Bar Chart**: Shows monthly average close price trends for the last 8 months.
   - **Pie Chart**: Illustrates the latest month's price change distribution (Positive, Negative, Zero Change Days).
 - **Customizable Time Ranges**: Switch between different time periods to analyze short-term and long-term trends.
@@ -92,7 +93,7 @@ The application is deployed on Netlify at [https://tejstock-app.netlify.app/#](h
 2. Use the search bar in the sidebar to find a stock index.
 3. Select an index to view its detailed data and charts.
 4. Click the "AI Analyzer" button to analyze the selected index's historical data.
-5. Adjust the time range using the buttons (1D, 1W, 1M, 3M, 1Y, 5Y) to explore different periods.
+5. Adjust the time range using the buttons ( 1M, 3M, 1Y, 5Y) to explore different periods.
 6. Add indices to your watchlist by searching and selecting them.
 
 ## Future Enhancements
