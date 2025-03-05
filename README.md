@@ -1,6 +1,3 @@
-Here's a README for your StockBoard application based on its features, with the AI Analyzer mentioned first and including the deployed link:
-
----
 
 # StockBoard
 
