@@ -4,6 +4,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import { Line, Bar, Pie } from 'react-chartjs-2';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import StockAnalysisSidebar from './components/StockAnalysisSidebar';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement, ArcElement);
 
 function App() {
@@ -114,6 +115,8 @@ function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchHistory, setSearchHistory] = useState([]);
+  const [historicalStockData, setHistoricalStockData] = useState([]);
+  const [showAnalysisSidebar, setShowAnalysisSidebar] = useState(false);
   const maxHistoryLength = 5;
 
   useEffect(() => {
@@ -255,7 +258,7 @@ function App() {
     const processedData = aggregateData(filteredData, timeRange);
     console.log(`Processed data for ${timeRange}:`, processedData);
 
-    // Compute Monthly Average Close Price for Bar Chart
+ 
     const monthlyData = {};
     filteredData.forEach(row => {
       const date = new Date(row.index_date);
@@ -287,8 +290,6 @@ function App() {
       months: months.length > 0 ? months : ['No Data'],
       avgClosePrices: avgClosePrices.length > 0 ? avgClosePrices : [0],
     });
-
-    // Compute Price Change Distribution for Pie Chart (Latest Month)
     const latestMonthData = Object.entries(monthlyData)
       .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))[0];
 
@@ -703,6 +704,26 @@ function App() {
       return updatedHistory.slice(0, maxHistoryLength);
     });
   };
+  const handleAnalyzeStock = () => {
+    const indexData = rawData
+      .filter(row => row.index_name === selectedIndex && row.closing_index_value !== null)
+      .sort((a, b) => new Date(a.index_date) - new Date(b.index_date))
+      .slice(-30)
+      .map(row => ({
+        date: row.index_date,
+        closePrice: Number(row.closing_index_value)
+      }));
+  
+    if (indexData.length > 0) {
+      setHistoricalStockData(indexData);
+      setShowAnalysisSidebar(true);
+    } else {
+      console.warn('No historical stock data available for', selectedIndex);
+    }
+  };
+  const toggleAnalysisSidebar = () => {
+    setShowAnalysisSidebar(!showAnalysisSidebar);
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
@@ -819,14 +840,6 @@ function App() {
               )}
             </div>
           </div>
-          <div className="position-fixed bottom-0 start-0" style={{ width: '240px' }}>
-            <div className="m-2 p-3 rounded" style={{ backgroundColor: '#2a2a2a' }}>
-              <div className="d-flex justify-content-between">
-                <span className="badge bg-dark">⬆️</span>
-                <span>×</span>
-              </div>
-            </div>
-          </div>
         </div>
         <div className="col">
           <nav className="navbar navbar-dark" style={{ backgroundColor: '#121212', borderBottom: '1px solid #333' }}>
@@ -837,7 +850,7 @@ function App() {
                 <span className="text-light">Details Stock</span>
               </div>
               <div className="d-flex">
-                <button className="btn btn-dark me-2">
+                <button className="btn btn-dark me-2"onClick={handleAnalyzeStock}>
                   <span className="me-1">🔍</span> Analyze Stock
                 </button>
                 <button className="btn btn-dark me-2">🔖</button>
@@ -1051,6 +1064,12 @@ function App() {
           </div>
         </div>
       </div>
+      <StockAnalysisSidebar
+        isOpen={showAnalysisSidebar}
+        toggleSidebar={toggleAnalysisSidebar}
+        stockData={historicalStockData}
+        stockName={selectedIndex}
+      />
     </div>
   );
 }
