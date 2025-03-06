@@ -23,7 +23,7 @@ Deployed Link: [https://tejstock-app.netlify.app/#](https://tejstock-app.netlify
   - Previous Close
   - Open Price
   - Day's Range
-  - Turnover (in Rs Cr)
+  - Turnover
   - Points Change
   - Percentage Change
   - Volume
